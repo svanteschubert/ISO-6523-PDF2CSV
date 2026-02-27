@@ -12,8 +12,8 @@ Java console application that reads the ISO 6523 ICD list PDF and produces three
 
 The official ICD list is available from the [ISO/IEC 6523 Registration Authority](http://iso6523.info/):
 
-- **PDF:** [icd_list_2025-11-11.pdf](src/test/resources/icd_list_2025-11-11.pdf) ([source](http://iso6523.info/icd_list.pdf))
-- **Website updated:** 2025-11-08
+- **Last remote PDF downloaded:** [icd_list_2025-11-11.pdf](src/test/resources/icd_list_2025-11-11.pdf) ([source](http://iso6523.info/icd_list.pdf))
+- **Last remote website date:** 2025-11-08
 
 The tool checks on each run whether the local PDF matches the online version. If a newer version is available, it is downloaded with a date suffix into the resources folder; that dated file is used for conversion.
 
@@ -25,14 +25,7 @@ The tool checks on each run whether the local PDF matches the online version. If
 ## Build and run
 
 ```bash
-mvn clean package
-mvn -q exec:java
-```
-
-By default, the input PDF is [icd_list_2025-11-11.pdf](src/test/resources/icd_list_2025-11-11.pdf). Optionally specify paths:
-
-```bash
-mvn -q exec:java -Dexec.args="path/to/icd_list.pdf path/to/output-dir"
+mvn clean install
 ```
 
 ## License
