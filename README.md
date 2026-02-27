@@ -1,18 +1,21 @@
 # ISO 6523 PDF to CSV
 
-Java console application that reads the ISO 6523 ICD list PDF and produces two CSV files:
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-- `target/icd_summary.csv` – two-column list of ICDs and scheme names (pages 1–7)
-- `target/icd_details.csv` – one row per ICD with all documented fields (pages 8+)
+Java console application that reads the ISO 6523 ICD list PDF and produces three CSV files:
+
+- [icd_summary.csv](src/test/resources/references/icd_summary.csv) – two-column list of ICDs and scheme names (pages 1–7)
+- [icd_details.csv](src/test/resources/references/icd_details.csv) – one row per ICD with all documented fields (pages 8+)
+- [icd_combined.csv](src/test/resources/references/icd_combined.csv) – details with Name of Scheme and comparison column (joined from summary)
 
 ## PDF source
 
 The official ICD list is available from the [ISO/IEC 6523 Registration Authority](http://iso6523.info/):
 
-- **PDF:** [http://iso6523.info/icd_list.pdf](http://iso6523.info/icd_list.pdf)
+- **PDF:** [icd_list_2025-11-11.pdf](src/test/resources/icd_list_2025-11-11.pdf) ([source](http://iso6523.info/icd_list.pdf))
 - **Website updated:** 2025-11-08
 
-When using the default path `src/test/resources/icd_list.pdf`, the tool checks on each run whether the local PDF matches the online version. If a newer version is available, it is downloaded as `icd_list_2025-11-08.pdf` (date reflects the website’s last update); the original `icd_list.pdf` is left unchanged.
+The tool checks on each run whether the local PDF matches the online version. If a newer version is available, it is downloaded with a date suffix into the resources folder; that dated file is used for conversion.
 
 ## Requirements
 
@@ -26,9 +29,15 @@ mvn clean package
 mvn -q exec:java
 ```
 
-By default, the input PDF is `src/test/resources/icd_list.pdf` (or `icd_list_2025-11-08.pdf` if a new version was downloaded) and output goes to `target`. Optionally specify paths:
+By default, the input PDF is [icd_list_2025-11-11.pdf](src/test/resources/icd_list_2025-11-11.pdf). Optionally specify paths:
 
 ```bash
 mvn -q exec:java -Dexec.args="path/to/icd_list.pdf path/to/output-dir"
 ```
+
+## License
+
+This project is licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+
+See the [LICENSE](LICENSE) file for the full text.
 
