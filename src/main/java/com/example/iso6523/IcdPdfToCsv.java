@@ -33,6 +33,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.Optional;
 import java.util.concurrent.Executors;
@@ -42,6 +43,7 @@ import java.util.stream.Collectors;
  * Converts the ISO 6523 ICD list PDF into CSV files:
  * <ul>
  *   <li>Summary CSV (pages 1–7): ICD code and Name of Scheme</li>
+ *   <li>Summary CSV (natural order): same as Summary, ICDs sorted numerically</li>
  *   <li>Details CSV (pages 8+): one row per ICD with all documented fields</li>
  *   <li>Combined CSV: Details with Name of Scheme as 2nd column (joined from Summary)</li>
  * </ul>
@@ -145,12 +147,14 @@ public final class IcdPdfToCsv {
         Files.createDirectories(outputDir);
 
         var summaryCsv = outputDir.resolve("icd_summary.csv");
+        var summaryNaturalOrderCsv = outputDir.resolve("icd_summary_natural_order.csv");
         var detailsCsv = outputDir.resolve("icd_details.csv");
 
         var combinedCsv = outputDir.resolve("icd_combined.csv");
         try (var document = Loader.loadPDF(pdfPath.toFile())) {
             var summaryRecords = extractSummaryRecords(document);
             writeSummaryCsv(summaryCsv, summaryRecords);
+            writeSummaryNaturalOrderCsv(summaryNaturalOrderCsv, summaryRecords);
 
             var details = extractDetailRecords(document);
             writeDetailsCsv(detailsCsv, details);
@@ -162,12 +166,14 @@ public final class IcdPdfToCsv {
         var referencesDir = projectRoot.resolve("src/test/resources/references");
         Files.createDirectories(referencesDir);
         Files.copy(summaryCsv, referencesDir.resolve("icd_summary.csv"), StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(summaryNaturalOrderCsv, referencesDir.resolve("icd_summary_natural_order.csv"), StandardCopyOption.REPLACE_EXISTING);
         Files.copy(detailsCsv, referencesDir.resolve("icd_details.csv"), StandardCopyOption.REPLACE_EXISTING);
         Files.copy(combinedCsv, referencesDir.resolve("icd_combined.csv"), StandardCopyOption.REPLACE_EXISTING);
 
-        System.out.println("Summary CSV written to  : " + summaryCsv.toAbsolutePath());
-        System.out.println("Details CSV written to  : " + detailsCsv.toAbsolutePath());
-        System.out.println("Combined CSV written to : " + combinedCsv.toAbsolutePath());
+        System.out.println("Summary CSV written to              : " + summaryCsv.toAbsolutePath());
+        System.out.println("Summary CSV (natural order) written : " + summaryNaturalOrderCsv.toAbsolutePath());
+        System.out.println("Details CSV written to               : " + detailsCsv.toAbsolutePath());
+        System.out.println("Combined CSV written to              : " + combinedCsv.toAbsolutePath());
         System.out.println("Reference copies in     : " + referencesDir.toAbsolutePath());
     }
 
@@ -410,6 +416,22 @@ public final class IcdPdfToCsv {
         try (var writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
             writeCsvRow(writer, "ICD", "Name of Scheme");
             for (var r : records) {
+                writeCsvRow(writer, formatIcdFourDigits(r.icd()), r.name());
+            }
+        }
+    }
+
+    /** Writes summary CSV with ICDs in natural (numeric) order. */
+    private static void writeSummaryNaturalOrderCsv(Path file, java.util.List<SummaryRecord> records) throws IOException {
+        var sorted = new java.util.ArrayList<>(records);
+        sorted.sort(Comparator.comparing(r -> {
+            var icd = formatIcdFourDigits(r.icd());
+            return icd.matches("[0-9]+") ? Integer.parseInt(icd) : Integer.MAX_VALUE;
+        }));
+        Files.createDirectories(file.getParent());
+        try (var writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
+            writeCsvRow(writer, "ICD", "Name of Scheme");
+            for (var r : sorted) {
                 writeCsvRow(writer, formatIcdFourDigits(r.icd()), r.name());
             }
         }

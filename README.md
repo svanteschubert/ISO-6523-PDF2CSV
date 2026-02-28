@@ -5,6 +5,7 @@
 Java console application that reads the ISO 6523 ICD list PDF and produces three CSV files:
 
 - [icd_summary.csv](src/test/resources/references/icd_summary.csv) – two-column list of ICDs and scheme names (pages 1–7)
+- [icd_summary_natural_order.csv](src/test/resources/references/icd_summary_natural_order.csv) – Summary with ICDs sorted in natural (numeric) order
 - [icd_details.csv](src/test/resources/references/icd_details.csv) – one row per ICD with all documented fields (pages 8+)
 - [icd_combined.csv](src/test/resources/references/icd_combined.csv) – details with Name of Scheme and comparison column (joined from summary)
 
