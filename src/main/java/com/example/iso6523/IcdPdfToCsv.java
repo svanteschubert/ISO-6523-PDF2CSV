@@ -45,6 +45,7 @@ import java.util.stream.Collectors;
  *   <li>Summary CSV (pages 1–7): ICD code and Name of Scheme</li>
  *   <li>Summary CSV (natural order): same as Summary, ICDs sorted numerically</li>
  *   <li>Details CSV (pages 8+): one row per ICD with all documented fields</li>
+ *   <li>Summary from details CSV: first two columns of Details (ICD, Name of Coding System)</li>
  *   <li>Combined CSV: Details with Name of Scheme as 2nd column (joined from Summary)</li>
  * </ul>
  */
@@ -150,6 +151,7 @@ public final class IcdPdfToCsv {
         var summaryNaturalOrderCsv = outputDir.resolve("icd_summary_natural_order.csv");
         var detailsCsv = outputDir.resolve("icd_details.csv");
 
+        var summaryFromDetailsCsv = outputDir.resolve("icd_summary_from_details.csv");
         var combinedCsv = outputDir.resolve("icd_combined.csv");
         try (var document = Loader.loadPDF(pdfPath.toFile())) {
             var summaryRecords = extractSummaryRecords(document);
@@ -158,6 +160,7 @@ public final class IcdPdfToCsv {
 
             var details = extractDetailRecords(document);
             writeDetailsCsv(detailsCsv, details);
+            writeSummaryFromDetailsCsv(summaryFromDetailsCsv, details);
             details.missingHeaderWarnings().forEach(System.out::println);
 
             writeCombinedCsv(combinedCsv, summaryRecords, details);
@@ -168,11 +171,13 @@ public final class IcdPdfToCsv {
         Files.copy(summaryCsv, referencesDir.resolve("icd_summary.csv"), StandardCopyOption.REPLACE_EXISTING);
         Files.copy(summaryNaturalOrderCsv, referencesDir.resolve("icd_summary_natural_order.csv"), StandardCopyOption.REPLACE_EXISTING);
         Files.copy(detailsCsv, referencesDir.resolve("icd_details.csv"), StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(summaryFromDetailsCsv, referencesDir.resolve("icd_summary_from_details.csv"), StandardCopyOption.REPLACE_EXISTING);
         Files.copy(combinedCsv, referencesDir.resolve("icd_combined.csv"), StandardCopyOption.REPLACE_EXISTING);
 
         System.out.println("Summary CSV written to              : " + summaryCsv.toAbsolutePath());
         System.out.println("Summary CSV (natural order) written : " + summaryNaturalOrderCsv.toAbsolutePath());
         System.out.println("Details CSV written to               : " + detailsCsv.toAbsolutePath());
+        System.out.println("Summary from details CSV written to   : " + summaryFromDetailsCsv.toAbsolutePath());
         System.out.println("Combined CSV written to              : " + combinedCsv.toAbsolutePath());
         System.out.println("Reference copies in     : " + referencesDir.toAbsolutePath());
     }
@@ -480,6 +485,20 @@ public final class IcdPdfToCsv {
                     }
                 }
                 writeCsvRow(writer, fields);
+            }
+        }
+    }
+
+    /** Writes a subset of details: only ICD and Name of Coding System (first two columns). */
+    private static void writeSummaryFromDetailsCsv(Path file, DetailExtractionResult details) throws IOException {
+        Files.createDirectories(file.getParent());
+        try (var writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
+            writeCsvRow(writer, COMBINED_ICD_HEADER, "Name of Coding System");
+            for (var row : details.rows()) {
+                var icd = formatIcdFourDigits(row.getOrDefault("ICD", row.getOrDefault("International Code Designator", "")));
+                var name = stripEndOfListNoise(row.getOrDefault("Name of Coding System", ""))
+                        .replaceAll("\\\\n|\\n|\\r", " ");
+                writeCsvRow(writer, icd, name);
             }
         }
     }
